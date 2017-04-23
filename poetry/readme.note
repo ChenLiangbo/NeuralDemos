@@ -1,0 +1,65 @@
+[platform]
+  python 3.5
+  tensorflow 0.12.0
+
+[computer]
+  office41
+  python3
+  numpy : sudo python3 -m pip install numpy
+  tensorflow 0.12.0 : sudo python3 -m pip install tensorflow==0.12.0
+
+[Ubuntu Cmd]
+  python3 train.py
+  python3 run.py
+
+[Theory]
+  Input(sequence) -> LSTM -> Vector ->LSTMs ->Output
+  模型 ： 序列 -> 向量 -> 序列
+    首先将不定长的输入转换为定长的vector，完成编码
+    然后将vector输入剩下的LSTM得到输出序列
+
+  序列(x1,x2,xn) -> (y1,y2 ,...,ym)  n = m, m!=n
+    最大似然法求取条件概率
+    p(y1,y2,...,ym)|(x1,x2,...,xn)) = S(P(yt|y1,y2,...yt-1))
+
+  最后一层神经网络将网络的输出通过softmax映射到所有的vocabulary
+  输出的结果顺着vocabulary对应的概率由大到小取  直到遇到结尾字符 ']'
+  这也就是为什么每个句子都应该以一个特殊的符号结尾 程序中以'['开始， ']'结尾
+
+  tips:将输入逆序  输出不逆序  对于机器翻译而言可以提高效果
+
+[paper]
+  Sequence to Sequence Learning with Neural Networks
+  job  : 英语 -> 法语  翻译
+  model:
+    sequence(不定长) -> LSTMs(2) -> vector(定长) -> LSTMs(2) ->softmax(vocabulary) - >sequences(不定长)
+    每层LSTM 数量都是1000
+    softmax 将网络的输出映射到输出的vocabulary中
+    所选取的结果是顺着概率由大到小选择，直到遇到结束的标识符('EOS')
+  tips: 将输入逆序，输出不逆序
+        输入逆序之后的训练结果在翻译中显示对于长句子的效果比短句子的效果好得更明显
+
+  experiments:
+    (1) “A”, “B”, “C”, “<EOS>”  ->  “W”, “X”, “Y”, “Z”, “<EOS>”
+        a,b,c -> A,B,C
+        c,b,a -> A,B,C
+    (2) 训练 随机梯度下降算法SGD
+        初始化 ：uniform distribution between -0.08 and 0.08
+        学习率 ：0.7  经过5个epoch之后，每半个周期epoch减半 总共训练了7.5 epoch
+        batch_size : 128
+        batches    : length//bathc_size
+        正则化     ：s = ||g||2, where g is the gradient divided by 128. 
+                     If s > 5, we set g = 5 s g 
+        定长       ： 每个batch里面的句子都有相同的长度  这也就是将诗词按照长短排序的原因
+        耗时长度    : 8 GPUs,4 for LSTM,4 for softmax ,10 days
+
+    (3) 评价指标 BLUE scores link:BLEU:a Method for Automatic Evaluation of Machine Translation
+    (4)dataset : WMT’14 English to French 
+       trainset: 12M subset sentencens include:348M French words and 304M English words
+
+    (5)vocabulary
+        source : 160,000  words
+        target :  80,000  words
+
+        out: UNK   means unknown words
+
