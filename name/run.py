@@ -140,7 +140,7 @@ def train_neural_network(epoch):
 
 			saver.save(sess, "./model/name2sex.data")
 
-train_neural_network(epoch = 10)
+# train_neural_network(epoch = 10)
 print('--------------------- train model okay ---------------------------')
 # 使用训练的模型
 def detect_sex(name_list):
