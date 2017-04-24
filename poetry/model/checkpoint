@@ -1,2 +1,0 @@
-model_checkpoint_path: "poetry.data"
-all_model_checkpoint_paths: "poetry.data"

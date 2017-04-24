@@ -40,6 +40,7 @@ def neural_network(model='lstm', rnn_size=128, num_layers=2):
 	with tf.variable_scope('rnnlm'):
 		softmax_w = tf.get_variable("softmax_w", [rnn_size, len(words)+1])
 		softmax_b = tf.get_variable("softmax_b", [len(words)+1])
+		# tf.Variable
 		with tf.device("/cpu:0"):
 			embedding = tf.get_variable("embedding", [len(words)+1, rnn_size])
 			inputs = tf.nn.embedding_lookup(embedding, input_data)

@@ -7,8 +7,10 @@
 import collections
 import numpy as np
 import tensorflow as tf
+import time
 
-#-------------------------------数据预处理---------------------------#
+
+print("-------------------------------数据预处理---------------------------")
 dataset = './dataset/'
 poetry_file = dataset + 'poetry.txt'
  
@@ -49,7 +51,7 @@ words, _ = zip(*count_pairs)
 # 取前多少个常用字
 words = words[:len(words)] + (' ',)
 # 每个字映射为一个数字ID
-word_num_map = dict(zip(words, range(len(words))))
+word_num_map = dict(zip(words, range(len(words))))  # {"人":5,""}
 # 把诗转换为向量形式，参考TensorFlow练习1
 to_num = lambda word: word_num_map.get(word, len(words))
 poetrys_vector = [ list(map(to_num, poetry)) for poetry in poetrys]
@@ -81,11 +83,11 @@ for i in range(n_chunk):
 	x_batches.append(xdata)
 	y_batches.append(ydata)
  
- 
+print("words = ",len(words))
 #---------------------------------------RNN--------------------------------------#
  
-input_data = tf.placeholder(tf.int32, [batch_size, None])
-output_targets = tf.placeholder(tf.int32, [batch_size, None])
+input_data = tf.placeholder(tf.int32, [batch_size, None])    # [64,None]
+output_targets = tf.placeholder(tf.int32, [batch_size, None])# [64,None]
 # 定义RNN
 def neural_network(model='lstm', rnn_size=128, num_layers=2):
 	if model == 'rnn':
@@ -104,15 +106,21 @@ def neural_network(model='lstm', rnn_size=128, num_layers=2):
 		softmax_w = tf.get_variable("softmax_w", [rnn_size, len(words)+1])
 		softmax_b = tf.get_variable("softmax_b", [len(words)+1])
 		with tf.device("/cpu:0"):
+			# embedding = (6111,128) inputs = (1,?,128)
 			embedding = tf.get_variable("embedding", [len(words)+1, rnn_size])
 			inputs = tf.nn.embedding_lookup(embedding, input_data)
+			# print("inputs.get_shape = ",inputs.get_shape())
  
 	outputs, last_state = tf.nn.dynamic_rnn(cell, inputs, initial_state=initial_state, scope='rnnlm')
-	output = tf.reshape(outputs,[-1, rnn_size])
+	# print("outputs.get_shape = ",outputs.get_shape()) # (1,?,128)
+	output = tf.reshape(outputs,[-1, rnn_size])       # (?,128)
+	# print("output.get_shape = ",output.get_shape())
 
  
-	logits = tf.matmul(output, softmax_w) + softmax_b
+	logits = tf.matmul(output, softmax_w) + softmax_b  # (?,6111)
+	# print("logits.get_shape = ",logits.get_shape())
 	probs = tf.nn.softmax(logits)
+	# print("probs.get_shape = ",probs.get_shape())       #(?,6111)
 	return logits, last_state, probs, cell, initial_state
 
 print("#-------------------------------生成古诗---------------------------------#")
@@ -145,10 +153,11 @@ def gen_poetry():
 		print("restore model successfully !")
 		state_ = sess.run(cell.zero_state(1, tf.float32))
 		x = np.array([list(map(word_num_map.get, '['))])  # x.shape = (1,1)
+		# print("x = ",x) # x = [[2]]
 		[probs_, state_] = sess.run([probs, last_state], feed_dict={input_data: x, initial_state: state_})
 		print("probs_ = ",probs_.shape)  # (1,6111)
 		word = to_word(probs_)
-		print("word = ",word,words[-1])
+		print("first word = ",word,words[-1])
 		#word = words[np.argmax(probs_)]
 		poem = ''
 		i = 0
@@ -162,14 +171,18 @@ def gen_poetry():
 			#word = words[np.argmax(probs_)]
 			# break
 			i = i + 1
-			if i > 100:
+			if i > 200:
 				break
 		return poem
 poem = gen_poetry()
-print(poem)
+poem = poem.split('。')
+print("-"*50)
+for p in poem:
+	print(p)
+print('-'*50)
 
 
-# 生成藏头诗
+print("--------------------------------生成藏头诗--------------------------------#")
 def gen_poetry_with_head(head):
 	def to_word(weights):
 		t = np.cumsum(weights)
@@ -180,10 +193,10 @@ def gen_poetry_with_head(head):
 	_, last_state, probs, cell, initial_state = neural_network()
  
 	with tf.Session() as sess:
-		sess.run(tf.initialize_all_variables())
+		sess.run(tf.global_variables_initializer())
  
-		saver = tf.train.Saver(tf.all_variables())
-		saver.restore(sess, 'poetry.module-49')
+		saver = tf.train.Saver(tf.global_variables())
+		saver.restore(sess,'./model/poetry.data')	
  
 		state_ = sess.run(cell.zero_state(1, tf.float32))
 		poem = ''

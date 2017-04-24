@@ -1,0 +1,2 @@
+model_checkpoint_path: "name2sex.data"
+all_model_checkpoint_paths: "name2sex.data"

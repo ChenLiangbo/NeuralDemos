@@ -1,9 +1,10 @@
-# http://blog.topspeedsnail.com/archives/10833
+#!usr/bin/env/python 
+# -*- coding: utf-8 -*-
 
 import tensorflow as tf
 import numpy as np
 import data_util
-
+# http://blog.topspeedsnail.com/archives/10833
 name_dataset ='./dataset/name.csv'
 '''
 train_x = []
@@ -109,7 +110,7 @@ def neural_network(vocabulary_size, embedding_size=128, num_filters=128):
 		
 	return output
 # 训练
-def train_neural_network():
+def train_neural_network(epoch):
 	output = neural_network(len(vocabulary_list))
 
 	optimizer = tf.train.AdamOptimizer(1e-3)
@@ -118,21 +119,29 @@ def train_neural_network():
 	train_op = optimizer.apply_gradients(grads_and_vars)
 
 	saver = tf.train.Saver(tf.global_variables())
+	# saver = tf.train.Saver()
+
 	with tf.Session() as sess:
 		sess.run(tf.global_variables_initializer())
+		try:
+			saver.restore(sess,"./model/name2sex.data")
+		except Exception as ex:
+			print("[Exception Information] ",str(ex))
 
-		for e in range(201):
+		for e in range(epoch):
 			for i in range(num_batch):
 				batch_x = train_x_vec[i*batch_size : (i+1)*batch_size]
 				batch_y = train_y[i*batch_size : (i+1)*batch_size]
 				_, loss_ = sess.run([train_op, loss], feed_dict={X:batch_x, Y:batch_y, dropout_keep_prob:0.5})
-				print(e, i, loss_)
+				print("epoch = %d, step = %d, loss = %f" % (e, i, loss_))
+				break
+			# break
 			# 保存模型
-			if e % 50 == 0:
-				saver.save(sess, "name2sex.model", global_step=e)
 
-train_neural_network()
+			saver.save(sess, "./model/name2sex.data")
 
+train_neural_network(epoch = 10)
+print('--------------------- train model okay ---------------------------')
 # 使用训练的模型
 def detect_sex(name_list):
 	x = []
@@ -149,12 +158,8 @@ def detect_sex(name_list):
 	saver = tf.train.Saver(tf.global_variables())
 	with tf.Session() as sess:
 		# 恢复前一次训练
-		ckpt = tf.train.get_checkpoint_state('.')
-		if ckpt != None:
-			print(ckpt.model_checkpoint_path)
-			saver.restore(sess, ckpt.model_checkpoint_path)
-		else:
-			print("没找到模型")
+		saver.restore(sess,'./model/name2sex.data')
+
 
 		predictions = tf.argmax(output, 1)
 		res = sess.run(predictions, {X:x, dropout_keep_prob:1.0})
