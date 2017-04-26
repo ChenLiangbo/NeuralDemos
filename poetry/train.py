@@ -89,6 +89,7 @@ input_data = tf.placeholder(tf.int32, [batch_size, None])
 output_targets = tf.placeholder(tf.int32, [batch_size, None])
 # 定义RNN
 def neural_network(model='lstm', rnn_size=128, num_layers=2):
+	print("-"*40)
 	if model == 'rnn':
 		cell_fun = tf.nn.rnn_cell.BasicRNNCell
 	elif model == 'gru':
@@ -98,9 +99,10 @@ def neural_network(model='lstm', rnn_size=128, num_layers=2):
  
 	cell = cell_fun(rnn_size, state_is_tuple=True)
 	cell = tf.nn.rnn_cell.MultiRNNCell([cell] * num_layers, state_is_tuple=True)
- 
+	# cell.output_size = 128
+	# cell.state_size :(LSTMStateTuple(c=128, h=128), LSTMStateTuple(c=128, h=128))
+
 	initial_state = cell.zero_state(batch_size, tf.float32)
- 
 	with tf.variable_scope('rnnlm'):
 		softmax_w = tf.get_variable("softmax_w", [rnn_size, len(words)+1])
 		softmax_b = tf.get_variable("softmax_b", [len(words)+1])
@@ -111,10 +113,12 @@ def neural_network(model='lstm', rnn_size=128, num_layers=2):
 	outputs, last_state = tf.nn.dynamic_rnn(cell, inputs, initial_state=initial_state, scope='rnnlm')
 	output = tf.reshape(outputs,[-1, rnn_size])
 	print("output = ",output.get_shape())
+	print("last_state = ",dir(last_state))
  
 	logits = tf.matmul(output, softmax_w) + softmax_b
 	probs = tf.nn.softmax(logits)
 	print("probs = ",probs.get_shape())
+	print("-"*40)
 	return logits, last_state, probs, cell, initial_state
 #训练
 
@@ -150,10 +154,10 @@ def train_neural_network(epoch):
 				n += 1
 				if batche % 100 == 0:
 					print("epoch =%d, batche = %d, train_loss = %f" % (epoch, batche, train_loss))
-				break
+				# break
 			if epoch % 10 == 0:
 				saver.save(sess, './model/poetry.data')
 				break
 			saver.save(sess, './model/poetry.data')
  
-train_neural_network(epoch = 50)
+train_neural_network(epoch = 1)

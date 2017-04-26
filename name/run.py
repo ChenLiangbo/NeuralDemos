@@ -154,19 +154,20 @@ def detect_sex(name_list):
 		x.append(name_vec)
 
 	output = neural_network(len(vocabulary_list))
-
 	saver = tf.train.Saver(tf.global_variables())
 	with tf.Session() as sess:
 		# 恢复前一次训练
 		saver.restore(sess,'./model/name2sex.data')
 
-
 		predictions = tf.argmax(output, 1)
 		res = sess.run(predictions, {X:x, dropout_keep_prob:1.0})
+		print("res = ",res,type(res))
 
 		i = 0
 		for name in name_list:
 			print(name, '女' if res[i] == 0 else '男')
 			i += 1
-
-detect_sex(["白富美", "高帅富", "王婷婷", "田野"])
+	return res
+results = detect_sex(["白富美", "高帅富", "王婷婷", "田野"])
+train_y = np.array(train_y)
+print("train_y.shape = ",train_y.shape)

@@ -1,7 +1,7 @@
 #!usr/bin/env/python 
 # -*- coding: utf-8 -*-
 
-# dataset https://pan.baidu.com/s/1o7QlUhO
+# dataset https://pan.baidu.com/s/1o7QlUhO   #全唐诗(43030首)
 # http://blog.topspeedsnail.com/archives/10542
 
 import collections
@@ -84,6 +84,10 @@ for i in range(n_chunk):
 	y_batches.append(ydata)
  
 print("words = ",len(words))
+# import pickle
+# fp = open("./caogao/words.pkl",'wb')
+# pickle.dump(words,fp,True)
+# fp.close()
 #---------------------------------------RNN--------------------------------------#
  
 input_data = tf.placeholder(tf.int32, [batch_size, None])    # [64,None]
@@ -128,6 +132,10 @@ print("#-------------------------------生成古诗-----------------------------
 #        [3, 4, 5, 6]])                                  
 # array([ 1,  3,  6, 10, 13, 17, 22, 28])  np.cumsum(a)
 # (2,4) -> (8,)
+def get_word(weights):
+	index = weights.argmax(axis = 1)
+	return words[int(index)]
+
 # 使用训练完成的模型
 def gen_poetry():
 	def to_word(weights):
@@ -155,18 +163,25 @@ def gen_poetry():
 		x = np.array([list(map(word_num_map.get, '['))])  # x.shape = (1,1)
 		# print("x = ",x) # x = [[2]]
 		[probs_, state_] = sess.run([probs, last_state], feed_dict={input_data: x, initial_state: state_})
-		print("probs_ = ",probs_.shape)  # (1,6111)
+		# print("probs_ = ",probs_.shape)  # (1,6111)
+		# fp = open('./caogao/probs.pkl','wb')
+		# pickle.dump(probs_,fp,True)
+		# fp.close()
+
 		word = to_word(probs_)
+		# word = get_word(probs_)
 		print("first word = ",word,words[-1])
 		#word = words[np.argmax(probs_)]
 		poem = ''
 		i = 0
 		while word != ']':
-			poem += word
+			if word != '[':
+				poem += word
 			x = np.zeros((1,1))
 			x[0,0] = word_num_map[word]
 			[probs_, state_] = sess.run([probs, last_state], feed_dict={input_data: x, initial_state: state_})
-			word = to_word(probs_)
+			# word = to_word(probs_)
+			word = get_word(probs_)
 			# print("word = ",word," poem = ",poem)
 			#word = words[np.argmax(probs_)]
 			# break
@@ -206,7 +221,8 @@ def gen_poetry_with_head(head):
 				poem += word
 				x = np.array([list(map(word_num_map.get, word))])
 				[probs_, state_] = sess.run([probs, last_state], feed_dict={input_data: x, initial_state: state_})
-				word = to_word(probs_)
+				# word = to_word(probs_)
+				word = get_word(probs_)
 				time.sleep(1)
 			if i % 2 == 0:
 				poem += '，'
