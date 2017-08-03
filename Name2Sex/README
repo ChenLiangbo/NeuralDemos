@@ -1,0 +1,55 @@
+ ========================================================
+ ||                     Name2Sex                        ||
+ ========================================================
+
+ A neural network application with convolutional network.
+ Given a Chinese name,then determine its gender.
+
+blog  : http://blog.csdn.net/u014365862/article/details/53869732
+github: https://github.com/tensorflow/models/tree/master/namignizer
+
+
+ platform
+ ---------------------
+ python 3.5
+ tensorflow 0.12.0
+
+
+
+ '''
+ cd Name2Sex
+ python3 run.py
+ '''
+
+ Network
+ ----------------------------------
+X [?,8]
+Y [?,2]    [0,1]->male  [1,0]->famale
+
+                       Conv1(3,3,1,128) ->  MaxPool(1,7,1,1) 
+                      /                                     \
+X -> Embedding(128)->  Conv2(4,4,1,128) ->  MaxPool(1,6,1,1) -concat(?,128*3) ->
+                      \                                     /
+                       Conv3(5,5,1,128) ->  MaxPool(1,5,1,1)
+
+
+                      Full(304,2)
+
+
+--------------------------------------
+
+
+
+detail
+-----------------------------------
+optimizer: Adam
+loss     : softmax_cross_entropy_with_logits
+lr       : 1e-3
+epoch    : 3000
+batch    : 64
+
+
+directory
+-------------------------------------
+data_util.py  : deal with data(read file,get voccabulary,vectorize)
+run.py        : nn file (get data,build NN,train,test)
